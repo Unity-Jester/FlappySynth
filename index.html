@@ -137,6 +137,24 @@
         if (game.bird.y + game.bird.radius >= GROUND_Y || game.bird.y - game.bird.radius <= 0) {
           killBird();
         }
+        // Spawn particle
+        if (game.frame % 2 === 0) {
+          game.particles.push({
+            x: game.bird.x - game.bird.radius,
+            y: game.bird.y + (Math.random() - 0.5) * 8,
+            vx: -(Math.random() * 1.5 + 0.5),
+            vy: (Math.random() - 0.5) * 1.2,
+            life: 1.0,
+            r: Math.random() * 4 + 2,
+          });
+        }
+        // Update particles
+        game.particles = game.particles.filter(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.06;
+          return p.life > 0;
+        });
         return;
       }
 
@@ -145,6 +163,9 @@
         game.bird.vy = Math.min(game.bird.vy + GRAVITY, TERM_VEL);
         game.bird.y += game.bird.vy;
         if (game.flash > 0) game.flash -= 0.03;
+        game.particles = game.particles.filter(p => {
+          p.x += p.vx; p.y += p.vy; p.life -= 0.06; return p.life > 0;
+        });
       }
     }
 
@@ -189,6 +210,7 @@
       ctx.lineTo(W, GROUND_Y);
       ctx.stroke();
       ctx.shadowBlur = 0;
+      drawParticles();
       drawBird();
     }
 
@@ -207,6 +229,20 @@
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.radius * 0.45, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawParticles() {
+      game.particles.forEach(p => {
+        ctx.globalAlpha = p.life * 0.8;
+        ctx.shadowColor = '#00f5ff';
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = '#00f5ff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
     }
 
