@@ -255,6 +255,7 @@
       drawParticles();
       drawBird();
       drawHUD();
+      drawOverlay();
     }
 
     function drawBird() {
@@ -326,6 +327,55 @@
         ctx.textAlign = 'center';
         ctx.fillText(game.score, W / 2, 90);
         ctx.shadowBlur = 0;
+      }
+    }
+
+    function drawOverlay() {
+      // Death flash
+      if (game.flash > 0) {
+        ctx.globalAlpha = game.flash;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
+      }
+
+      if (game.state === 'idle') {
+        // Title
+        ctx.shadowColor = '#00f5ff';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#00f5ff';
+        ctx.font = 'bold 42px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('FLAPPY SYNTH', W / 2, H / 2 - 40);
+        ctx.shadowBlur = 0;
+
+        // Prompt
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.font = '20px monospace';
+        ctx.fillText('SPACE / TAP TO START', W / 2, H / 2 + 10);
+      }
+
+      if (game.state === 'dead') {
+        // Dim background
+        ctx.fillStyle = 'rgba(13, 2, 33, 0.65)';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.shadowColor = '#ff2079';
+        ctx.shadowBlur = 24;
+        ctx.fillStyle = '#ff2079';
+        ctx.font = 'bold 46px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', W / 2, H / 2 - 60);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '28px monospace';
+        ctx.fillText(`SCORE  ${game.score}`, W / 2, H / 2);
+        ctx.fillText(`BEST   ${game.best}`, W / 2, H / 2 + 40);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = '18px monospace';
+        ctx.fillText('SPACE / TAP TO RESTART', W / 2, H / 2 + 100);
       }
     }
 
