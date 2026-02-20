@@ -434,29 +434,15 @@
     }
 
     function drawBird() {
-      const b = game.bird;
-      // outer glow
-      ctx.shadowColor = '#00f5ff';
-      ctx.shadowBlur = 30;
-      ctx.fillStyle = '#00f5ff';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-      ctx.fill();
-      // inner bright core
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      CHARS[game.charIndex].draw(ctx, game.bird);
     }
 
     function drawParticles() {
       game.particles.forEach(p => {
         ctx.globalAlpha = p.life * 0.8;
-        ctx.shadowColor = '#00f5ff';
+        ctx.shadowColor = CHARS[game.charIndex].color;
         ctx.shadowBlur = 6;
-        ctx.fillStyle = '#00f5ff';
+        ctx.fillStyle = CHARS[game.charIndex].color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
         ctx.fill();
