@@ -157,6 +157,27 @@
           return p.x + p.w > -10;
         });
 
+        const b = game.bird;
+        for (const p of game.pipes) {
+          const bLeft  = b.x - b.radius;
+          const bRight = b.x + b.radius;
+          const bTop   = b.y - b.radius;
+          const bBot   = b.y + b.radius;
+
+          const inXRange = bRight > p.x - 4 && bLeft < p.x + p.w + 4;
+
+          if (inXRange && (bTop < p.gapTop || bBot > p.gapBot)) {
+            killBird();
+            break;
+          }
+
+          // Score: bird just passed pipe centre
+          if (!p.scored && b.x > p.x + p.w / 2) {
+            p.scored = true;
+            game.score++;
+          }
+        }
+
                 // Spawn particle
         if (game.frame % 2 === 0) {
           game.particles.push({
