@@ -527,18 +527,48 @@
       }
 
       if (game.state === 'idle') {
-        // Title
-        ctx.shadowColor = '#00f5ff';
+        const charColor = CHARS[game.charIndex].color;
+
+        // Title (color matches selected character)
+        ctx.shadowColor = charColor;
         ctx.shadowBlur = 20;
-        ctx.fillStyle = '#00f5ff';
+        ctx.fillStyle = charColor;
         ctx.font = 'bold 42px monospace';
         ctx.textAlign = 'center';
         ctx.fillText('FLAPPY SYNTH', W / 2, H / 2 - 40);
         ctx.shadowBlur = 0;
 
+        // Left arrow (dimmed on first character)
+        ctx.fillStyle = game.charIndex > 0
+          ? 'rgba(255,255,255,0.85)'
+          : 'rgba(255,255,255,0.25)';
+        ctx.font = 'bold 36px monospace';
+        ctx.fillText('<', W / 6, H / 2 + 10);
+
+        // Right arrow (dimmed on last character)
+        ctx.fillStyle = game.charIndex < CHARS.length - 1
+          ? 'rgba(255,255,255,0.85)'
+          : 'rgba(255,255,255,0.25)';
+        ctx.fillText('>', W * 5 / 6, H / 2 + 10);
+
+        // Character name
+        ctx.fillStyle = charColor;
+        ctx.font = 'bold 18px monospace';
+        ctx.fillText(CHARS[game.charIndex].name, W / 2, H / 2 + 50);
+
+        // Dot indicators
+        const dotSpacing = 16;
+        const dotsW = (CHARS.length - 1) * dotSpacing;
+        CHARS.forEach((_, i) => {
+          ctx.fillStyle = i === game.charIndex ? charColor : 'rgba(255,255,255,0.3)';
+          ctx.beginPath();
+          ctx.arc(W / 2 - dotsW / 2 + i * dotSpacing, H / 2 + 74, 5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
         // Prompt
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.font = '20px monospace';
+        ctx.font = '18px monospace';
         ctx.fillText('SPACE / TAP TO START', W / 2, H / 2 + 10);
       }
 
