@@ -87,6 +87,26 @@
       game.flash    = 0;
     }
 
+    // ─── Static background layers ─────────────────────────────────────────────
+    const stars = Array.from({ length: 80 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * (GROUND_Y - 60),
+      r: Math.random() * 1.5 + 0.3,
+      a: Math.random() * 0.5 + 0.5,
+    }));
+
+    // City silhouette: array of {x, w, h} blocks
+    const cityBlocks = [];
+    {
+      let cx = 0;
+      while (cx < W + 60) {
+        const bw = 20 + Math.random() * 40;
+        const bh = 30 + Math.random() * 80;
+        cityBlocks.push({ x: cx, w: bw, h: bh });
+        cx += bw + 2 + Math.random() * 8;
+      }
+    }
+
     // ─── Game loop ────────────────────────────────────────────────────────────────
     let lastTime = 0;
     function loop(ts) {
@@ -104,8 +124,36 @@
     }
 
     function draw() {
+      // Sky
       ctx.fillStyle = '#0d0221';
       ctx.fillRect(0, 0, W, H);
+
+      // Stars
+      stars.forEach(s => {
+        ctx.globalAlpha = s.a;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+
+      // City silhouette
+      ctx.fillStyle = '#1a0533';
+      cityBlocks.forEach(b => {
+        ctx.fillRect(b.x, GROUND_Y - b.h, b.w, b.h);
+      });
+
+      // Ground glow line
+      ctx.shadowColor = '#f7b731';
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = '#f7b731';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, GROUND_Y);
+      ctx.lineTo(W, GROUND_Y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
 
     requestAnimationFrame(loop);
