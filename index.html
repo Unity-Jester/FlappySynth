@@ -242,9 +242,34 @@
         resetGame();
       }
     }
-    document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); flap(); } });
-    canvas.addEventListener('click',     flap);
-    canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, { passive: false });
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') { e.preventDefault(); flap(); return; }
+      if (game.state === 'idle') {
+        if (e.code === 'ArrowLeft')  { e.preventDefault(); setChar(game.charIndex - 1); return; }
+        if (e.code === 'ArrowRight') { e.preventDefault(); setChar(game.charIndex + 1); return; }
+      }
+    });
+    canvas.addEventListener('click', e => {
+      if (game.state === 'idle') {
+        const rect  = canvas.getBoundingClientRect();
+        const scale = W / rect.width;
+        const cx    = (e.clientX - rect.left) * scale;
+        if (cx < W / 3)       { setChar(game.charIndex - 1); return; }
+        if (cx > (W * 2) / 3) { setChar(game.charIndex + 1); return; }
+      }
+      flap();
+    });
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      if (game.state === 'idle') {
+        const rect  = canvas.getBoundingClientRect();
+        const scale = W / rect.width;
+        const cx    = (e.touches[0].clientX - rect.left) * scale;
+        if (cx < W / 3)       { setChar(game.charIndex - 1); return; }
+        if (cx > (W * 2) / 3) { setChar(game.charIndex + 1); return; }
+      }
+      flap();
+    }, { passive: false });
 
     function resetGame() {
       game.state    = 'idle';
