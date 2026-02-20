@@ -49,70 +49,6 @@
     const PIPE_GAP     = 160;
     const GROUND_Y     = H - 40;
 
-    // ─── Game state ──────────────────────────────────────────────────────────────
-    const game = {
-      state: 'idle',   // 'idle' | 'playing' | 'dead'
-      charIndex: Math.min(parseInt(localStorage.getItem('flappy_char') || '0'), CHARS.length - 1),
-      frame: 0,
-      score: 0,
-      best:  parseInt(localStorage.getItem('flappy_best') || '0'),
-      bird: { x: 120, y: H / 2, vy: 0, radius: 14 },
-      pipes: [],
-      particles: [],
-      flash: 0,        // death flash alpha (0–1)
-    };
-
-    // ─── Input ───────────────────────────────────────────────────────────────────
-    function flap() {
-      if (game.state === 'idle') {
-        game.state = 'playing';
-      }
-      if (game.state === 'playing') {
-        game.bird.vy = JUMP_VEL;
-      }
-      if (game.state === 'dead') {
-        resetGame();
-      }
-    }
-    document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); flap(); } });
-    canvas.addEventListener('click',     flap);
-    canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, { passive: false });
-
-    function resetGame() {
-      game.state    = 'idle';
-      game.frame    = 0;
-      game.score    = 0;
-      game.bird     = { x: 120, y: H / 2, vy: 0, radius: 14 };
-      game.pipes    = [];
-      game.particles= [];
-      game.flash    = 0;
-    }
-
-    function setChar(idx) {
-      game.charIndex = (idx + CHARS.length) % CHARS.length;
-      localStorage.setItem('flappy_char', game.charIndex);
-    }
-
-    // ─── Static background layers ─────────────────────────────────────────────
-    const stars = Array.from({ length: 80 }, () => ({
-      x: Math.random() * W,
-      y: Math.random() * (GROUND_Y - 60),
-      r: Math.random() * 1.5 + 0.3,
-      a: Math.random() * 0.5 + 0.5,
-    }));
-
-    // City silhouette: array of {x, w, h} blocks
-    const cityBlocks = [];
-    {
-      let cx = 0;
-      while (cx < W + 60) {
-        const bw = 20 + Math.random() * 40;
-        const bh = 30 + Math.random() * 80;
-        cityBlocks.push({ x: cx, w: bw, h: bh });
-        cx += bw + 2 + Math.random() * 8;
-      }
-    }
-
     // ─── Characters ───────────────────────────────────────────────────────────────
     const CHARS = [
       {
@@ -280,6 +216,70 @@
         },
       },
     ];
+
+    // ─── Game state ──────────────────────────────────────────────────────────────
+    const game = {
+      state: 'idle',   // 'idle' | 'playing' | 'dead'
+      charIndex: Math.min(parseInt(localStorage.getItem('flappy_char') || '0', 10), CHARS.length - 1),
+      frame: 0,
+      score: 0,
+      best:  parseInt(localStorage.getItem('flappy_best') || '0'),
+      bird: { x: 120, y: H / 2, vy: 0, radius: 14 },
+      pipes: [],
+      particles: [],
+      flash: 0,        // death flash alpha (0–1)
+    };
+
+    // ─── Input ───────────────────────────────────────────────────────────────────
+    function flap() {
+      if (game.state === 'idle') {
+        game.state = 'playing';
+      }
+      if (game.state === 'playing') {
+        game.bird.vy = JUMP_VEL;
+      }
+      if (game.state === 'dead') {
+        resetGame();
+      }
+    }
+    document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); flap(); } });
+    canvas.addEventListener('click',     flap);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, { passive: false });
+
+    function resetGame() {
+      game.state    = 'idle';
+      game.frame    = 0;
+      game.score    = 0;
+      game.bird     = { x: 120, y: H / 2, vy: 0, radius: 14 };
+      game.pipes    = [];
+      game.particles= [];
+      game.flash    = 0;
+    }
+
+    function setChar(idx) {
+      game.charIndex = (idx + CHARS.length) % CHARS.length;
+      localStorage.setItem('flappy_char', game.charIndex);
+    }
+
+    // ─── Static background layers ─────────────────────────────────────────────
+    const stars = Array.from({ length: 80 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * (GROUND_Y - 60),
+      r: Math.random() * 1.5 + 0.3,
+      a: Math.random() * 0.5 + 0.5,
+    }));
+
+    // City silhouette: array of {x, w, h} blocks
+    const cityBlocks = [];
+    {
+      let cx = 0;
+      while (cx < W + 60) {
+        const bw = 20 + Math.random() * 40;
+        const bh = 30 + Math.random() * 80;
+        cityBlocks.push({ x: cx, w: bw, h: bh });
+        cx += bw + 2 + Math.random() * 8;
+      }
+    }
 
     // ─── Game loop ────────────────────────────────────────────────────────────────
     let lastTime = 0;
