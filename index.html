@@ -40,9 +40,75 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Verify: fill with background colour
-    ctx.fillStyle = '#0d0221';
-    ctx.fillRect(0, 0, W, H);
+    // ─── Constants ───────────────────────────────────────────────────────────────
+    const GRAVITY      = 0.5;
+    const JUMP_VEL     = -9;
+    const TERM_VEL     = 12;
+    const PIPE_SPEED   = 3;
+    const PIPE_INTERVAL= 90;   // frames between pipe spawns
+    const PIPE_GAP     = 160;
+    const GROUND_Y     = H - 40;
+
+    // ─── Game state ──────────────────────────────────────────────────────────────
+    const game = {
+      state: 'idle',   // 'idle' | 'playing' | 'dead'
+      frame: 0,
+      score: 0,
+      best:  parseInt(localStorage.getItem('flappy_best') || '0'),
+      bird: { x: 120, y: H / 2, vy: 0, radius: 14 },
+      pipes: [],
+      particles: [],
+      flash: 0,        // death flash alpha (0–1)
+    };
+
+    // ─── Input ───────────────────────────────────────────────────────────────────
+    function flap() {
+      if (game.state === 'idle') {
+        game.state = 'playing';
+      }
+      if (game.state === 'playing') {
+        game.bird.vy = JUMP_VEL;
+      }
+      if (game.state === 'dead') {
+        resetGame();
+      }
+    }
+    document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); flap(); } });
+    canvas.addEventListener('click',     flap);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, { passive: false });
+
+    function resetGame() {
+      game.state    = 'idle';
+      game.frame    = 0;
+      game.score    = 0;
+      game.bird     = { x: 120, y: H / 2, vy: 0, radius: 14 };
+      game.pipes    = [];
+      game.particles= [];
+      game.flash    = 0;
+    }
+
+    // ─── Game loop ────────────────────────────────────────────────────────────────
+    let lastTime = 0;
+    function loop(ts) {
+      const dt = Math.min(ts - lastTime, 50); // cap at 50 ms
+      lastTime = ts;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt) {
+      // placeholder
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0d0221';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
