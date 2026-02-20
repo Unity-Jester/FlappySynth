@@ -52,6 +52,7 @@
     // ─── Game state ──────────────────────────────────────────────────────────────
     const game = {
       state: 'idle',   // 'idle' | 'playing' | 'dead'
+      charIndex: Math.min(parseInt(localStorage.getItem('flappy_char') || '0'), CHARS.length - 1),
       frame: 0,
       score: 0,
       best:  parseInt(localStorage.getItem('flappy_best') || '0'),
@@ -85,6 +86,11 @@
       game.pipes    = [];
       game.particles= [];
       game.flash    = 0;
+    }
+
+    function setChar(idx) {
+      game.charIndex = (idx + CHARS.length) % CHARS.length;
+      localStorage.setItem('flappy_char', game.charIndex);
     }
 
     // ─── Static background layers ─────────────────────────────────────────────
