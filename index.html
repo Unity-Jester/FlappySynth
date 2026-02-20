@@ -107,6 +107,174 @@
       }
     }
 
+    // ─── Characters ───────────────────────────────────────────────────────────────
+    const CHARS = [
+      {
+        name: 'Orb',
+        color: '#00f5ff',
+        draw(ctx, b) {
+          ctx.shadowColor = '#00f5ff';
+          ctx.shadowBlur = 30;
+          ctx.fillStyle = '#00f5ff';
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.radius * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        },
+      },
+      {
+        name: 'Rocket',
+        color: '#ff2079',
+        draw(ctx, b) {
+          const r = b.radius;
+          ctx.shadowColor = '#ff2079';
+          ctx.shadowBlur = 20;
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          // Body
+          ctx.fillStyle = '#ff2079';
+          ctx.fillRect(-r, -r * 0.5, r * 1.5, r);
+          // Nose cone
+          ctx.beginPath();
+          ctx.moveTo(r * 0.5, -r * 0.5);
+          ctx.lineTo(r * 1.6, 0);
+          ctx.lineTo(r * 0.5,  r * 0.5);
+          ctx.closePath();
+          ctx.fill();
+          // Top fin
+          ctx.fillStyle = '#c0006a';
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.2, -r * 0.5);
+          ctx.lineTo(-r * 0.8, -r * 1.1);
+          ctx.lineTo( r * 0.2, -r * 0.5);
+          ctx.closePath();
+          ctx.fill();
+          // Bottom fin
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.2,  r * 0.5);
+          ctx.lineTo(-r * 0.8,  r * 1.1);
+          ctx.lineTo( r * 0.2,  r * 0.5);
+          ctx.closePath();
+          ctx.fill();
+          // Window
+          ctx.shadowBlur = 6;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(r * 0.2, 0, r * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          ctx.shadowBlur = 0;
+        },
+      },
+      {
+        name: 'UFO',
+        color: '#39ff14',
+        draw(ctx, b) {
+          const r = b.radius;
+          ctx.shadowColor = '#39ff14';
+          ctx.shadowBlur = 24;
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          // Saucer body
+          ctx.fillStyle = '#39ff14';
+          ctx.beginPath();
+          ctx.ellipse(0, r * 0.25, r * 1.3, r * 0.55, 0, 0, Math.PI * 2);
+          ctx.fill();
+          // Dome
+          ctx.fillStyle = 'rgba(57,255,20,0.45)';
+          ctx.beginPath();
+          ctx.ellipse(0, -r * 0.1, r * 0.7, r * 0.65, 0, Math.PI, 0);
+          ctx.fill();
+          // Dome rim
+          ctx.strokeStyle = '#39ff14';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(0, -r * 0.1, r * 0.7, r * 0.65, 0, Math.PI, 0);
+          ctx.stroke();
+          ctx.lineWidth = 1;
+          // Lights
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = '#ffffff';
+          [-r * 0.55, 0, r * 0.55].forEach(lx => {
+            ctx.beginPath();
+            ctx.arc(lx, r * 0.3, r * 0.13, 0, Math.PI * 2);
+            ctx.fill();
+          });
+          ctx.restore();
+          ctx.shadowBlur = 0;
+        },
+      },
+      {
+        name: 'Ghost',
+        color: '#b829dd',
+        draw(ctx, b) {
+          const r = b.radius;
+          ctx.shadowColor = '#b829dd';
+          ctx.shadowBlur = 22;
+          ctx.save();
+          ctx.translate(b.x, b.y);
+          ctx.fillStyle = '#b829dd';
+          // Head + body
+          ctx.beginPath();
+          ctx.arc(0, -r * 0.15, r, Math.PI, 0);
+          ctx.lineTo(r, r * 0.65);
+          // Wavy bottom (3 bumps)
+          ctx.quadraticCurveTo( r * 0.65, r * 1.2,  r * 0.33, r * 0.65);
+          ctx.quadraticCurveTo(          0, r * 1.2, -r * 0.33, r * 0.65);
+          ctx.quadraticCurveTo(-r * 0.65, r * 1.2, -r,         r * 0.65);
+          ctx.closePath();
+          ctx.fill();
+          // Eyes — whites
+          ctx.shadowBlur = 4;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(-r * 0.32, -r * 0.2, r * 0.24, 0, Math.PI * 2);
+          ctx.arc( r * 0.32, -r * 0.2, r * 0.24, 0, Math.PI * 2);
+          ctx.fill();
+          // Eyes — pupils
+          ctx.fillStyle = '#0d0221';
+          ctx.beginPath();
+          ctx.arc(-r * 0.30, -r * 0.16, r * 0.11, 0, Math.PI * 2);
+          ctx.arc( r * 0.34, -r * 0.16, r * 0.11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          ctx.shadowBlur = 0;
+        },
+      },
+      {
+        name: 'Pixel Bird',
+        color: '#f7b731',
+        draw(ctx, b) {
+          const r  = b.radius;
+          const p  = Math.max(2, Math.floor(r / 3.5));
+          const ox = b.x - r;
+          const oy = b.y - r * 0.9;
+          ctx.shadowColor = '#f7b731';
+          ctx.shadowBlur = 16;
+          const grid = [
+            [1,0,'#f7b731'],[2,0,'#f7b731'],
+            [3,1,'#f7b731'],[4,1,'#f7b731'],[5,1,'#ffffff'],
+            [6,2,'#ff8c00'],[6,3,'#ff8c00'],
+            [1,2,'#f7b731'],[2,2,'#f7b731'],[3,2,'#f7b731'],[4,2,'#f7b731'],[5,2,'#f7b731'],
+            [1,3,'#f7b731'],[2,3,'#f7b731'],[3,3,'#f7b731'],[4,3,'#f7b731'],[5,3,'#f7b731'],
+            [0,3,'#e09000'],[0,4,'#e09000'],
+            [2,4,'#f7b731'],[3,4,'#f7b731'],[4,4,'#f7b731'],
+            [2,5,'#ff8c00'],[4,5,'#ff8c00'],
+          ];
+          grid.forEach(([col, row, color]) => {
+            ctx.fillStyle = color;
+            ctx.fillRect(ox + col * p, oy + row * p, p, p);
+          });
+          ctx.shadowBlur = 0;
+        },
+      },
+    ];
+
     // ─── Game loop ────────────────────────────────────────────────────────────────
     let lastTime = 0;
     function loop(ts) {
