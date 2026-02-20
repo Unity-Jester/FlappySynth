@@ -120,7 +120,42 @@
     }
 
     function update(dt) {
-      // placeholder
+      game.frame++;
+
+      if (game.state === 'idle') {
+        // gentle bob
+        game.bird.y = H / 2 + Math.sin(game.frame * 0.05) * 10;
+        return;
+      }
+
+      if (game.state === 'playing') {
+        // Gravity
+        game.bird.vy = Math.min(game.bird.vy + GRAVITY, TERM_VEL);
+        game.bird.y += game.bird.vy;
+
+        // Hit floor or ceiling
+        if (game.bird.y + game.bird.radius >= GROUND_Y || game.bird.y - game.bird.radius <= 0) {
+          killBird();
+        }
+        return;
+      }
+
+      if (game.state === 'dead') {
+        // Keep falling off screen
+        game.bird.vy = Math.min(game.bird.vy + GRAVITY, TERM_VEL);
+        game.bird.y += game.bird.vy;
+        if (game.flash > 0) game.flash -= 0.03;
+      }
+    }
+
+    function killBird() {
+      if (game.state === 'dead') return;
+      game.state = 'dead';
+      game.flash = 0.7;
+      if (game.score > game.best) {
+        game.best = game.score;
+        localStorage.setItem('flappy_best', game.best);
+      }
     }
 
     function draw() {
@@ -153,6 +188,25 @@
       ctx.moveTo(0, GROUND_Y);
       ctx.lineTo(W, GROUND_Y);
       ctx.stroke();
+      ctx.shadowBlur = 0;
+      drawBird();
+    }
+
+    function drawBird() {
+      const b = game.bird;
+      // outer glow
+      ctx.shadowColor = '#00f5ff';
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = '#00f5ff';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+      ctx.fill();
+      // inner bright core
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius * 0.45, 0, Math.PI * 2);
+      ctx.fill();
       ctx.shadowBlur = 0;
     }
 
