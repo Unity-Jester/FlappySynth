@@ -251,6 +251,7 @@
       ctx.lineTo(W, GROUND_Y);
       ctx.stroke();
       ctx.shadowBlur = 0;
+      ctx.lineWidth = 1;
       drawPipes();
       drawParticles();
       drawBird();
@@ -327,6 +328,7 @@
         ctx.textAlign = 'center';
         ctx.fillText(game.score, W / 2, 90);
         ctx.shadowBlur = 0;
+        ctx.textAlign = 'left';
       }
     }
 
