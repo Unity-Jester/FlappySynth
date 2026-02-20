@@ -137,7 +137,27 @@
         if (game.bird.y + game.bird.radius >= GROUND_Y || game.bird.y - game.bird.radius <= 0) {
           killBird();
         }
-        // Spawn particle
+        // Spawn pipes
+        if (game.frame % PIPE_INTERVAL === 0) {
+          const minY = 80;
+          const maxY = GROUND_Y - PIPE_GAP - 80;
+          const gapTop = minY + Math.random() * (maxY - minY);
+          game.pipes.push({
+            x: W + 30,
+            gapTop,
+            gapBot: gapTop + PIPE_GAP,
+            scored: false,
+            w: 52,
+          });
+        }
+
+        // Move pipes
+        game.pipes = game.pipes.filter(p => {
+          p.x -= PIPE_SPEED;
+          return p.x + p.w > -10;
+        });
+
+                // Spawn particle
         if (game.frame % 2 === 0) {
           game.particles.push({
             x: game.bird.x - game.bird.radius,
@@ -210,6 +230,7 @@
       ctx.lineTo(W, GROUND_Y);
       ctx.stroke();
       ctx.shadowBlur = 0;
+      drawPipes();
       drawParticles();
       drawBird();
     }
@@ -244,6 +265,35 @@
       });
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
+    }
+
+    function drawPipes() {
+      game.pipes.forEach(p => {
+        const capH = 20;
+        const capW = p.w + 8;
+        const capOff = (capW - p.w) / 2;
+
+        ctx.shadowColor = '#ff2079';
+        ctx.shadowBlur = 18;
+
+        // Top pipe body
+        ctx.fillStyle = '#c0006a';
+        ctx.fillRect(p.x, 0, p.w, p.gapTop - capH);
+
+        // Top pipe cap
+        ctx.fillStyle = '#ff2079';
+        ctx.fillRect(p.x - capOff, p.gapTop - capH, capW, capH);
+
+        // Bottom pipe body
+        ctx.fillStyle = '#c0006a';
+        ctx.fillRect(p.x, p.gapBot + capH, p.w, GROUND_Y - p.gapBot - capH);
+
+        // Bottom pipe cap
+        ctx.fillStyle = '#ff2079';
+        ctx.fillRect(p.x - capOff, p.gapBot, capW, capH);
+
+        ctx.shadowBlur = 0;
+      });
     }
 
     requestAnimationFrame(loop);
