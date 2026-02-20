@@ -138,7 +138,7 @@
           killBird();
         }
         // Spawn pipes
-        if (game.frame % PIPE_INTERVAL === 0) {
+        if (game.frame % PIPE_INTERVAL === 0 && game.frame > 0) {
           const minY = 80;
           const maxY = GROUND_Y - PIPE_GAP - 80;
           const gapTop = minY + Math.random() * (maxY - minY);
