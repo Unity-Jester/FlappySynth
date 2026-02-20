@@ -254,6 +254,7 @@
       drawPipes();
       drawParticles();
       drawBird();
+      drawHUD();
     }
 
     function drawBird() {
@@ -315,6 +316,17 @@
 
         ctx.shadowBlur = 0;
       });
+    }
+    function drawHUD() {
+      if (game.state === 'playing' || game.state === 'dead') {
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 52px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(game.score, W / 2, 90);
+        ctx.shadowBlur = 0;
+      }
     }
 
     requestAnimationFrame(loop);
