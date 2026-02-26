@@ -232,10 +232,13 @@
         SFX.init(this.ctx, this.masterGain);
         Music.init(this.ctx, this.masterGain);
         this.ready = true;
+        if (game.state === 'idle') SFX.idleHum.start(SFX);
       },
 
       setState(state) {
         if (!this.ready) return;
+        if (state === 'idle') SFX.idleHum.start(SFX);
+        else SFX.idleHum.stop(SFX);
         Music.setState(state);
       },
     };
@@ -367,11 +370,69 @@
         osc.frequency.exponentialRampToValueAtTime(600, t + 0.2);
       },
 
-      charSwitch() {},
-      whoosh() {},
-      fanfare() {},
-      particleTick() {},
-      idleHum: { start() {}, stop() {} },
+      charSwitch() {
+        if (!this.ctx) return;
+        this._osc('square', 800, 0.03, 0.1);
+      },
+      whoosh() {
+        if (!this.ctx) return;
+        this._noise(0.08, 0.04, 1500);
+      },
+      fanfare() {
+        if (!this.ctx) return;
+        const notes = [523, 659, 784, 1047]; // C5 E5 G5 C6
+        notes.forEach((f, i) => {
+          const t = this.ctx.currentTime + i * 0.08;
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.15, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+          g.connect(this.out);
+          const o = this.ctx.createOscillator();
+          o.type = 'square';
+          o.frequency.setValueAtTime(f, t);
+          o.connect(g);
+          o.start(t);
+          o.stop(t + 0.2);
+        });
+      },
+      particleTick() {
+        if (!this.ctx) return;
+        this._osc('sine', 1200 + Math.random() * 400, 0.02, 0.02);
+      },
+      idleHum: {
+        _osc: null, _gain: null, _lfo: null,
+        start(sfx) {
+          if (this._osc) return;
+          const t = sfx.ctx.currentTime;
+          this._gain = sfx.ctx.createGain();
+          this._gain.gain.setValueAtTime(0, t);
+          this._gain.gain.linearRampToValueAtTime(0.06, t + 1);
+          this._gain.connect(sfx.out);
+          this._osc = sfx.ctx.createOscillator();
+          this._osc.type = 'sine';
+          this._osc.frequency.value = 55;
+          const lfo = sfx.ctx.createOscillator();
+          const lfoG = sfx.ctx.createGain();
+          lfo.frequency.value = 0.3;
+          lfoG.gain.value = 4;
+          lfo.connect(lfoG);
+          lfoG.connect(this._osc.frequency);
+          lfo.start(t);
+          this._lfo = lfo;
+          this._osc.connect(this._gain);
+          this._osc.start(t);
+        },
+        stop(sfx) {
+          if (!this._osc) return;
+          const t = sfx.ctx.currentTime;
+          this._gain.gain.linearRampToValueAtTime(0, t + 0.5);
+          this._osc.stop(t + 0.6);
+          this._lfo.stop(t + 0.6);
+          this._osc = null;
+          this._lfo = null;
+          this._gain = null;
+        },
+      },
     };
 
     const Music = {
@@ -454,6 +515,7 @@
     function setChar(idx) {
       game.charIndex = (idx + CHARS.length) % CHARS.length;
       localStorage.setItem('flappy_char', game.charIndex);
+      SFX.charSwitch();
     }
 
     // ─── Static background layers ─────────────────────────────────────────────
@@ -546,6 +608,12 @@
             game.score++;
             SFX.score();
           }
+
+          // Whoosh: pipe just passed bird
+          if (p.scored && !p.whooshed && p.x + p.w < b.x) {
+            p.whooshed = true;
+            SFX.whoosh();
+          }
         }
 
                 // Spawn particle
@@ -558,6 +626,7 @@
             life: 1.0,
             r: Math.random() * 4 + 2,
           });
+          SFX.particleTick();
         }
         // Update particles
         game.particles = game.particles.filter(p => {
@@ -589,6 +658,7 @@
       if (game.score > game.best) {
         game.best = game.score;
         localStorage.setItem('flappy_best', game.best);
+        SFX.fanfare();
       }
     }
 
