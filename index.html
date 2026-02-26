@@ -447,6 +447,8 @@
       kickGain: null,
       hatGain: null,
       bassOsc: null, bassGain: null, bassFilter: null,
+      arpGain: null, arpFilter: null,
+      _idleArpTimer: null,
 
       // Chord progression: i → VI → III → VII in A minor
       // Am (A3 C4 E4), F (F3 A3 C4), C (C3 E3 G3), G (G3 B3 D4)
@@ -472,11 +474,14 @@
           this._startPad();
           this._stopRhythm();
           this._filterTo(800, 1.0);
+          this._startIdleArp();
         } else if (newState === 'playing') {
+          this._stopIdleArp();
           if (!this.padOscs) this._startPad();
           this._startRhythm();
           this._filterTo(4000, 0.5);
         } else if (newState === 'dead') {
+          this._stopIdleArp();
           this._stopRhythm();
           this._filterTo(300, 2.0);
           this._detunePad(15);
@@ -569,6 +574,15 @@
         this.bassOsc.connect(this.bassGain);
         this.bassOsc.start(t);
 
+        // Arp setup
+        this.arpFilter = this.ctx.createBiquadFilter();
+        this.arpFilter.type = 'lowpass';
+        this.arpFilter.frequency.value = 3000;
+        this.arpFilter.connect(this.out);
+        this.arpGain = this.ctx.createGain();
+        this.arpGain.gain.value = 0.08;
+        this.arpGain.connect(this.arpFilter);
+
         this.step = 0;
         const stepDur = this.sixteenth;
 
@@ -591,6 +605,11 @@
             this.bassOsc.frequency.setValueAtTime(root, now);
           }
 
+          // Arp: 16th notes, arpeggiate chord tones up an octave
+          const arpChord = this.chords[this._chordIndex || 0];
+          const arpNote = arpChord[s % 3] * 2; // cycle through chord tones, up one octave
+          this._arpNote(this.ctx.currentTime, arpNote, stepDur * 0.8);
+
           this.step++;
         }, stepDur * 1000);
       },
@@ -606,6 +625,8 @@
           this.bassGain = null;
           this.bassFilter = null;
         }
+        this.arpGain = null;
+        this.arpFilter = null;
       },
 
       _kick(t) {
@@ -641,6 +662,47 @@
         g.connect(this.out);
         src.start(t);
         src.stop(t + dur);
+      },
+
+      _arpNote(t, freq, dur) {
+        const o = this.ctx.createOscillator();
+        o.type = 'square';
+        o.frequency.setValueAtTime(freq, t);
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(0.08, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g);
+        g.connect(this.arpFilter || this.out);
+        o.start(t);
+        o.stop(t + dur);
+      },
+
+      _startIdleArp() {
+        if (this._idleArpTimer) return;
+        let step = 0;
+        this._idleArpTimer = setInterval(() => {
+          const chord = this.chords[this._chordIndex || 0];
+          const freq = chord[step % 3] * 2;
+          const t = this.ctx.currentTime;
+          const o = this.ctx.createOscillator();
+          o.type = 'triangle';
+          o.frequency.value = freq;
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.04, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+          o.connect(g);
+          g.connect(this.padFilter || this.out);
+          o.start(t);
+          o.stop(t + 0.4);
+          step++;
+        }, this.sixteenth * 4 * 1000); // quarter note pace
+      },
+
+      _stopIdleArp() {
+        if (this._idleArpTimer) {
+          clearInterval(this._idleArpTimer);
+          this._idleArpTimer = null;
+        }
       },
     };
 
