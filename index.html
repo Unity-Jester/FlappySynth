@@ -465,7 +465,10 @@
 
       init(ctx, out) {
         this.ctx = ctx;
-        this.out = out;
+        this.mixGain = ctx.createGain();
+        this.mixGain.gain.value = 0.45;
+        this.mixGain.connect(out);
+        this.out = this.mixGain;
         this.sixteenth = 60 / this.bpm / 4; // duration of one 16th note
       },
 
