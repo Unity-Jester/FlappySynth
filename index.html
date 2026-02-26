@@ -241,6 +241,10 @@
         else SFX.idleHum.stop(SFX);
         Music.setState(state);
       },
+
+      resume() {
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
     };
 
     const SFX = {
@@ -736,6 +740,7 @@
     }
     document.addEventListener('keydown', e => {
       Audio.init();
+      Audio.resume();
       if (e.code === 'Space') { e.preventDefault(); flap(); return; }
       if (game.state === 'idle') {
         if (e.code === 'ArrowLeft')  { e.preventDefault(); setChar(game.charIndex - 1); return; }
@@ -744,6 +749,7 @@
     });
     canvas.addEventListener('click', e => {
       Audio.init();
+      Audio.resume();
       if (game.state === 'idle') {
         const rect  = canvas.getBoundingClientRect();
         const scale = W / rect.width;
@@ -755,6 +761,7 @@
     });
     canvas.addEventListener('touchstart', e => {
       Audio.init();
+      Audio.resume();
       e.preventDefault();
       if (game.state === 'idle') {
         const rect  = canvas.getBoundingClientRect();
