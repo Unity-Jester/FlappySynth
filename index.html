@@ -217,6 +217,49 @@
       },
     ];
 
+    // ─── Audio ──────────────────────────────────────────────────────────────────
+    const Audio = {
+      ctx: null,
+      masterGain: null,
+      ready: false,
+
+      init() {
+        if (this.ready) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = 0.5;
+        this.masterGain.connect(this.ctx.destination);
+        SFX.init(this.ctx, this.masterGain);
+        Music.init(this.ctx, this.masterGain);
+        this.ready = true;
+      },
+
+      setState(state) {
+        if (!this.ready) return;
+        Music.setState(state);
+      },
+    };
+
+    const SFX = {
+      ctx: null, out: null,
+      init(ctx, out) { this.ctx = ctx; this.out = out; },
+      flap(charIdx) {},
+      score() {},
+      die() {},
+      start() {},
+      charSwitch() {},
+      whoosh() {},
+      fanfare() {},
+      particleTick() {},
+      idleHum: { start() {}, stop() {} },
+    };
+
+    const Music = {
+      ctx: null, out: null,
+      init(ctx, out) { this.ctx = ctx; this.out = out; },
+      setState(state) {},
+    };
+
     // ─── Game state ──────────────────────────────────────────────────────────────
     const game = {
       state: 'idle',   // 'idle' | 'playing' | 'dead'
@@ -243,6 +286,7 @@
       }
     }
     document.addEventListener('keydown', e => {
+      Audio.init();
       if (e.code === 'Space') { e.preventDefault(); flap(); return; }
       if (game.state === 'idle') {
         if (e.code === 'ArrowLeft')  { e.preventDefault(); setChar(game.charIndex - 1); return; }
@@ -250,6 +294,7 @@
       }
     });
     canvas.addEventListener('click', e => {
+      Audio.init();
       if (game.state === 'idle') {
         const rect  = canvas.getBoundingClientRect();
         const scale = W / rect.width;
@@ -260,6 +305,7 @@
       flap();
     });
     canvas.addEventListener('touchstart', e => {
+      Audio.init();
       e.preventDefault();
       if (game.state === 'idle') {
         const rect  = canvas.getBoundingClientRect();
