@@ -401,7 +401,7 @@
       },
       particleTick() {
         if (!this.ctx) return;
-        this._osc('sine', 1200 + Math.random() * 400, 0.02, 0.02);
+        this._osc('sine', 1200 + Math.random() * 400, 0.02, 0.005);
       },
       idleHum: {
         _osc: null, _gain: null, _lfo: null,
