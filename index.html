@@ -443,6 +443,10 @@
       state: 'idle',
       // Node references
       padOscs: null, padGain: null, padFilter: null,
+      rhythmTimer: null,
+      kickGain: null,
+      hatGain: null,
+      bassOsc: null, bassGain: null, bassFilter: null,
 
       // Chord progression: i → VI → III → VII in A minor
       // Am (A3 C4 E4), F (F3 A3 C4), C (C3 E3 G3), G (G3 B3 D4)
@@ -547,9 +551,97 @@
         this.padFilter.frequency.linearRampToValueAtTime(freq, t + duration);
       },
 
-      // Rhythm stubs — filled in Task 5
-      _startRhythm() {},
-      _stopRhythm() {},
+      _startRhythm() {
+        if (this.rhythmTimer) return;
+        const t = this.ctx.currentTime;
+
+        // Bass setup: continuous osc, we modulate frequency per step
+        this.bassFilter = this.ctx.createBiquadFilter();
+        this.bassFilter.type = 'lowpass';
+        this.bassFilter.frequency.value = 600;
+        this.bassFilter.connect(this.out);
+        this.bassGain = this.ctx.createGain();
+        this.bassGain.gain.value = 0;
+        this.bassGain.connect(this.bassFilter);
+        this.bassOsc = this.ctx.createOscillator();
+        this.bassOsc.type = 'sawtooth';
+        this.bassOsc.frequency.value = this.chords[0][0] / 2;
+        this.bassOsc.connect(this.bassGain);
+        this.bassOsc.start(t);
+
+        this.step = 0;
+        const stepDur = this.sixteenth;
+
+        this.rhythmTimer = setInterval(() => {
+          const now = this.ctx.currentTime;
+          const s = this.step % 16;
+
+          // Kick on 0, 4, 8, 12
+          if (s % 4 === 0) this._kick(now);
+
+          // Hi-hat on every even step, accent on off-beats
+          if (s % 2 === 0) this._hat(now, s % 4 === 2 ? 0.08 : 0.05);
+
+          // Bass: 8th notes (every 2 steps)
+          if (s % 2 === 0) {
+            const chord = this.chords[this._chordIndex || 0];
+            const root = chord[0] / 2; // one octave below
+            this.bassGain.gain.setValueAtTime(0.13, now);
+            this.bassGain.gain.exponentialRampToValueAtTime(0.001, now + stepDur * 1.8);
+            this.bassOsc.frequency.setValueAtTime(root, now);
+          }
+
+          this.step++;
+        }, stepDur * 1000);
+      },
+
+      _stopRhythm() {
+        if (this.rhythmTimer) {
+          clearInterval(this.rhythmTimer);
+          this.rhythmTimer = null;
+        }
+        if (this.bassOsc) {
+          this.bassOsc.stop(this.ctx.currentTime + 0.1);
+          this.bassOsc = null;
+          this.bassGain = null;
+          this.bassFilter = null;
+        }
+      },
+
+      _kick(t) {
+        const o = this.ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(160, t);
+        o.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(0.25, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        o.connect(g);
+        g.connect(this.out);
+        o.start(t);
+        o.stop(t + 0.15);
+      },
+
+      _hat(t, vol) {
+        const sr = this.ctx.sampleRate;
+        const dur = 0.04;
+        const buf = this.ctx.createBuffer(1, sr * dur, sr);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        const hp = this.ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 7000;
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        src.connect(hp);
+        hp.connect(g);
+        g.connect(this.out);
+        src.start(t);
+        src.stop(t + dur);
+      },
     };
 
     // ─── Game state ──────────────────────────────────────────────────────────────
