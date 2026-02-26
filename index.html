@@ -242,11 +242,131 @@
 
     const SFX = {
       ctx: null, out: null,
-      init(ctx, out) { this.ctx = ctx; this.out = out; },
-      flap(charIdx) {},
-      score() {},
-      die() {},
-      start() {},
+
+      init(ctx, out) {
+        this.ctx = ctx;
+        this.out = out;
+      },
+
+      // ── helpers ──
+      _osc(type, freq, duration, gain) {
+        const t = this.ctx.currentTime;
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(gain, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        g.connect(this.out);
+        const o = this.ctx.createOscillator();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        o.connect(g);
+        o.start(t);
+        o.stop(t + duration);
+        return { osc: o, gain: g, t };
+      },
+
+      _noise(duration, gain, freq) {
+        const t = this.ctx.currentTime;
+        const sr = this.ctx.sampleRate;
+        const buf = this.ctx.createBuffer(1, sr * duration, sr);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        const filt = this.ctx.createBiquadFilter();
+        filt.type = 'bandpass';
+        filt.frequency.value = freq || 4000;
+        filt.Q.value = 1;
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(gain, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+        src.connect(filt);
+        filt.connect(g);
+        g.connect(this.out);
+        src.start(t);
+        src.stop(t + duration);
+      },
+
+      // ── per-character waveforms ──
+      _charWave: ['sine', 'sawtooth', 'square', 'triangle', 'square'],
+
+      // ── sounds ──
+      flap(charIdx) {
+        if (!this.ctx) return;
+        const wave = this._charWave[charIdx] || 'square';
+        const { osc, t } = this._osc(wave, 300, 0.08, 0.18);
+        osc.frequency.exponentialRampToValueAtTime(500, t + 0.06);
+        // UFO ring mod
+        if (charIdx === 2) {
+          const mod = this.ctx.createOscillator();
+          const modG = this.ctx.createGain();
+          mod.frequency.value = 40;
+          modG.gain.value = 200;
+          mod.connect(modG);
+          modG.connect(osc.frequency);
+          mod.start(t);
+          mod.stop(t + 0.08);
+        }
+        // Ghost vibrato
+        if (charIdx === 3) {
+          const vib = this.ctx.createOscillator();
+          const vibG = this.ctx.createGain();
+          vib.frequency.value = 8;
+          vibG.gain.value = 30;
+          vib.connect(vibG);
+          vibG.connect(osc.frequency);
+          vib.start(t);
+          vib.stop(t + 0.08);
+        }
+        // Rocket distortion (clip via waveshaper)
+        if (charIdx === 1) {
+          const ws = this.ctx.createWaveShaper();
+          const k = 20;
+          const curve = new Float32Array(256);
+          for (let i = 0; i < 256; i++) {
+            const x = (i * 2) / 256 - 1;
+            curve[i] = ((Math.PI + k) * x) / (Math.PI + k * Math.abs(x));
+          }
+          ws.curve = curve;
+          osc.disconnect();
+          osc.connect(ws);
+          ws.connect(this.out);
+        }
+      },
+
+      score() {
+        if (!this.ctx) return;
+        const notes = [523, 659, 784]; // C5, E5, G5
+        notes.forEach((f, i) => {
+          const delay = i * 0.05;
+          const t = this.ctx.currentTime + delay;
+          const g = this.ctx.createGain();
+          g.gain.setValueAtTime(0.15, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+          g.connect(this.out);
+          const o = this.ctx.createOscillator();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(f, t);
+          o.connect(g);
+          o.start(t);
+          o.stop(t + 0.12);
+        });
+      },
+
+      die() {
+        if (!this.ctx) return;
+        // Noise burst
+        this._noise(0.3, 0.25, 2000);
+        // Falling pitch
+        const { osc, t } = this._osc('sawtooth', 400, 0.35, 0.2);
+        osc.frequency.exponentialRampToValueAtTime(80, t + 0.3);
+      },
+
+      start() {
+        if (!this.ctx) return;
+        const { osc, t } = this._osc('square', 200, 0.25, 0.12);
+        osc.frequency.exponentialRampToValueAtTime(600, t + 0.2);
+      },
+
       charSwitch() {},
       whoosh() {},
       fanfare() {},
@@ -277,9 +397,12 @@
     function flap() {
       if (game.state === 'idle') {
         game.state = 'playing';
+        Audio.setState('playing');
+        SFX.start();
       }
       if (game.state === 'playing') {
         game.bird.vy = JUMP_VEL;
+        SFX.flap(game.charIndex);
       }
       if (game.state === 'dead') {
         resetGame();
@@ -325,6 +448,7 @@
       game.pipes    = [];
       game.particles= [];
       game.flash    = 0;
+      Audio.setState('idle');
     }
 
     function setChar(idx) {
@@ -420,6 +544,7 @@
           if (!p.scored && b.x > p.x + p.w / 2) {
             p.scored = true;
             game.score++;
+            SFX.score();
           }
         }
 
@@ -459,6 +584,8 @@
       if (game.state === 'dead') return;
       game.state = 'dead';
       game.flash = 0.7;
+      Audio.setState('dead');
+      SFX.die();
       if (game.score > game.best) {
         game.best = game.score;
         localStorage.setItem('flappy_best', game.best);
