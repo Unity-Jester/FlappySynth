@@ -437,8 +437,119 @@
 
     const Music = {
       ctx: null, out: null,
-      init(ctx, out) { this.ctx = ctx; this.out = out; },
-      setState(state) {},
+      bpm: 110,
+      step: 0,
+      stepTime: 0,
+      state: 'idle',
+      // Node references
+      padOscs: null, padGain: null, padFilter: null,
+
+      // Chord progression: i → VI → III → VII in A minor
+      // Am (A3 C4 E4), F (F3 A3 C4), C (C3 E3 G3), G (G3 B3 D4)
+      chords: [
+        [220.00, 261.63, 329.63],   // Am
+        [174.61, 220.00, 261.63],   // F
+        [130.81, 164.81, 196.00],   // C
+        [196.00, 246.94, 293.66],   // G
+      ],
+
+      init(ctx, out) {
+        this.ctx = ctx;
+        this.out = out;
+        this.sixteenth = 60 / this.bpm / 4; // duration of one 16th note
+      },
+
+      setState(newState) {
+        const prev = this.state;
+        this.state = newState;
+        if (!this.ctx) return;
+
+        if (newState === 'idle') {
+          this._startPad();
+          this._stopRhythm();
+          this._filterTo(800, 1.0);
+        } else if (newState === 'playing') {
+          if (!this.padOscs) this._startPad();
+          this._startRhythm();
+          this._filterTo(4000, 0.5);
+        } else if (newState === 'dead') {
+          this._stopRhythm();
+          this._filterTo(300, 2.0);
+          this._detunePad(15);
+          setTimeout(() => { if (this.state === 'dead') this._detunePad(0); }, 1500);
+        }
+      },
+
+      _startPad() {
+        if (this.padOscs) return;
+        const t = this.ctx.currentTime;
+
+        this.padFilter = this.ctx.createBiquadFilter();
+        this.padFilter.type = 'lowpass';
+        this.padFilter.frequency.value = 800;
+        this.padFilter.Q.value = 1;
+        this.padFilter.connect(this.out);
+
+        this.padGain = this.ctx.createGain();
+        this.padGain.gain.setValueAtTime(0, t);
+        this.padGain.gain.linearRampToValueAtTime(0.12, t + 1);
+        this.padGain.connect(this.padFilter);
+
+        // Two detuned saws per chord note = warm pad
+        const chord = this.chords[0];
+        this.padOscs = [];
+        chord.forEach(freq => {
+          for (const detune of [-8, 8]) {
+            const o = this.ctx.createOscillator();
+            o.type = 'sawtooth';
+            o.frequency.value = freq;
+            o.detune.value = detune;
+            o.connect(this.padGain);
+            o.start(t);
+            this.padOscs.push(o);
+          }
+        });
+
+        // Start chord cycling
+        this._chordIndex = 0;
+        this._scheduleChordChange();
+      },
+
+      _scheduleChordChange() {
+        const barDuration = this.sixteenth * 16;
+        this._chordTimer = setInterval(() => {
+          this._chordIndex = (this._chordIndex + 1) % this.chords.length;
+          const chord = this.chords[this._chordIndex];
+          const t = this.ctx.currentTime;
+          if (!this.padOscs) return;
+          // Update frequencies: 2 oscillators per note, 3 notes
+          chord.forEach((freq, ni) => {
+            const o1 = this.padOscs[ni * 2];
+            const o2 = this.padOscs[ni * 2 + 1];
+            if (o1) o1.frequency.linearRampToValueAtTime(freq, t + 0.3);
+            if (o2) o2.frequency.linearRampToValueAtTime(freq, t + 0.3);
+          });
+        }, barDuration * 1000);
+      },
+
+      _detunePad(cents) {
+        if (!this.padOscs) return;
+        const t = this.ctx.currentTime;
+        this.padOscs.forEach((o, i) => {
+          const base = (i % 2 === 0) ? -8 : 8;
+          o.detune.linearRampToValueAtTime(base + cents, t + 0.5);
+        });
+      },
+
+      _filterTo(freq, duration) {
+        if (!this.padFilter) return;
+        const t = this.ctx.currentTime;
+        this.padFilter.frequency.linearRampToValueAtTime(freq, t + duration);
+      },
+
+      // Rhythm stubs — filled in Task 5
+      _startRhythm() {},
+      _stopRhythm() {},
     };
 
     // ─── Game state ──────────────────────────────────────────────────────────────
